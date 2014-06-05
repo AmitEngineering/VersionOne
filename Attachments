@@ -1,0 +1,83 @@
+public Attachments AttachFiles() throws Exception {
+    	String fi = "C:/test/file.txt";
+    	System.out.println("Attaching file .....");
+    	String ApplicationURL = "https://www14.v1host.com/v1sdktesting/";    	
+        String _username = "####";
+        String _password = "####";
+        // boolean _integrated = false;
+    	BufferedReader inr = new BufferedReader(new FileReader(fi));
+	    String s;
+	    
+	    while((s = inr.readLine()) != null){
+	    String[] var = s.split(",");
+        String file = "C:/Users/amisri/Downloads/PRDESK/PRDESK/"+var[1];
+        File f = new File(file);
+        if (f.exists())
+        {	
+        	System.out.println("Attaching file1 .....");
+        	FileInputStream in = null;
+            FileOutputStream out = null;
+
+           // Console.WriteLine("Uploading {0}", file);
+            String mimeType = MimeType.resolve(file);
+            IMetaModel metaModel = new MetaModel(new V1APIConnector(ApplicationURL + "meta.v1/"));
+            IServices services = new Services(metaModel, new V1APIConnector(ApplicationURL + "rest-1.v1/", _username, _password));
+            IAttachments attachments = new Attachments(new V1APIConnector(ApplicationURL + "attachment.img/", _username, _password));
+            
+            //cleanjeans scope
+            
+            Oid attachmentContext = Oid.fromToken(var[0],metaModel);
+            IAssetType attachmentType = metaModel.getAssetType("Attachment");
+            
+            IAttributeDefinition attachmentNameDef = attachmentType.getAttributeDefinition("Name");
+            IAttributeDefinition attachmentContentDef = attachmentType.getAttributeDefinition("Content");
+            IAttributeDefinition attachmentContentTypeDef = attachmentType.getAttributeDefinition("ContentType");
+            IAttributeDefinition attachmentFileNameDef = attachmentType.getAttributeDefinition("Filename");
+            Asset newAttachment = services.createNew(attachmentType, attachmentContext);
+            		
+            //newAttachment.SetAttributeValue(attachmentNameDef, "New Attachment");
+            newAttachment.setAttributeValue(attachmentNameDef, "New Attachment");
+            newAttachment.setAttributeValue(attachmentContentDef,"");
+            newAttachment.setAttributeValue(attachmentContentTypeDef, mimeType);
+            newAttachment.setAttributeValue(attachmentFileNameDef, file);
+            services.save(newAttachment);
+            //Setup and attach the payload
+           
+            String attachmentKey = newAttachment.getOid().getKey().toString();
+            int buffersize = 1024;
+            
+            try{
+			   FileInputStream input = new FileInputStream(file);
+            	//Stream output = attachments.GetWriteStream(attachmentKey)
+               OutputStream output = attachments.getWriter(attachmentKey, mimeType);
+               int c;
+               while ((c = input.read()) != -1) {
+            	   output.write(c);
+               }
+               
+               /*byte[] buffer = new byte[buffersize];
+               for (; ; )
+               {
+                   int read = input.read(buffer, 0, buffersize);
+                   if (read == 0){
+                       break;
+                   }
+                   output.write(buffer);
+                   //output.write(buffer, 0, read);
+               }*/
+               
+               
+               attachments.setWriter(attachmentKey);
+            }catch(Exception e){
+            	System.out.println(e);
+            }   
+            finally{
+            	System.out.println("upload Successful");            	
+            }
+            System.out.println("upload Successful");
+        }else{
+        	System.out.println("File does not exist");
+        }
+	    }
+    return null;
+    }
